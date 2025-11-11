@@ -1,10 +1,24 @@
-# Microsoft Fabric Sales Data Warehouse Implementation
+# Sales Data Warehouse Implementation and Customer-Product Reporting on Microsoft Fabric using SQL & Data Factory
 
-## Project Overview
+## Table of Contents
 
-A comprehensive **data warehouse solution** built on Microsoft Fabric demonstrating enterprise data architecture principles. This project implements a complete Extract-Transform-Load (ETL) pipeline with dimensional modeling, integrating raw sales data into a star schema data warehouse for advanced business analytics.
+1. [Executive Summary](#executive-summary)
+2. [Project Architecture](#project-architecture)
+3. [Featured SQL Examples](#featured-sql-examples)
+   1. [Stored Procedure: Automated Data Loading](#stored-procedure-automated-data-loading)
+   2. [Top Customers by Revenue Analysis](#top-customers-by-revenue-analysis)
+   3. [Top Products by Revenue](#top-products-by-revenue)
+   4. [Advanced Analytics: Top Customer per Category (Window Functions)](#advanced-analytics-top-customer-per-category-window-functions)
 
-## Project Goals
+
+
+## Executive Summary
+
+**Overview**  
+
+Dimensional data warehouse on Microsoft Fabric, implementing dimensional modeling with staging layer, stored procedure-based ETL automation, and incremental loading for sales analytics. Processes 121,317 sales transactions into optimized star schema.
+
+**Tasks and Goals**
 
 - Build a scalable, production-grade data warehouse using Microsoft Fabric
 - Design and implement star schema dimensional model for analytical queries
@@ -12,7 +26,27 @@ A comprehensive **data warehouse solution** built on Microsoft Fabric demonstrat
 - Enable multi-dimensional business analytics across customers, products, and categories
 - Demonstrate data governance and referential integrity patterns
 
-## Technology Stack
+**Key Achievements & Skills**
+
+✓ Designed and implemented a star schema with fact and dimension tables, including primary/foreign key relationships
+✓ Built an automated ETL pipeline using stored procedures, handling data loading, deduplication, and type consistency
+✓ Loaded 28,000+ transactions from staging (Lakehouse) to the fact table while maintaining clean data separation
+✓ Applied SQL analytics: complex CASE statements, window functions (ROW_NUMBER, PARTITION BY), multi-table joins, aggregations, and CTEs
+✓ Executed multi-dimensional business reporting for insights on customers, products, and sales performance
+✓ Managed Microsoft Fabric environment: lakehouse staging, data warehouse creation, schema organization, and integrated analytics
+
+**Repository Structure**
+
+```
+├── data/
+│   └── sales.csv
+├── MSFabric_Sales_DWH_Implementation.ipynb
+└── README.md
+```
+
+## Project Architecture
+
+**Technology Stack**
 
 | Component | Technology |
 |-----------|-----------|
@@ -23,9 +57,8 @@ A comprehensive **data warehouse solution** built on Microsoft Fabric demonstrat
 | **Data Format** | CSV (staging) → Dimensional Tables |
 | **Analytics** | SQL queries with window functions |
 
-## Architecture & Implementation
 
-### Data Flow
+**Data Flow**
 
 ```
 Sales CSV → Lakehouse (Staging) → ETL Pipeline → Data Warehouse
@@ -34,40 +67,35 @@ Sales CSV → Lakehouse (Staging) → ETL Pipeline → Data Warehouse
                            ├── DimCustomer
                            ├── DimItem
                            └── FactSales
+
+┌─────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│             │     │                  │     │                  │
+│  sales.csv  │────>│  Lakehouse       │────>│  Data Warehouse  │
+│             │     │  (sales_dlh)     │     │  (sales_dwh)     │
+└─────────────┘     │                  │     │                  │
+                    │  ┌─────────────┐ │     │  ┌────────────┐  │
+                    │  │ sales_stg   │ │     │  │ Dim_       │  │
+                    │  │ (staging)   │ │     │  │ Customer   │  │
+                    │  └─────────────┘ │     │  └────────────┘  │
+                    │                  │     │                  │
+                    └──────────────────┘     │  ┌────────────┐  │
+                                             │  │ Dim_Item   │  │
+                                             │  └────────────┘  │
+                                             │                  │
+                                             │  ┌────────────┐  │
+                                             │  │ Fact_Sales │  │
+                                             │  └────────────┘  │
+                                             └──────────────────┘
+
 ```
 
-### Schema Design
 
-**Staging Layer (Lakehouse)**
-- `salesstg`: Raw staging table from imported CSV data
-- Location: `salesdlh.dbo.salesstg` (Data Lakehouse)
 
-**Dimensional Model (Data Warehouse)**
-- `DimCustomer`: Customer master data with surrogate keys
-- `DimItem`: Product catalog with item details
-- `FactSales`: Transactional sales facts with foreign keys to dimensions
-- Location: `salesdwh.salesschema` (Dedicated Schema)
 
-### Key Features
 
-**Schema & Table Management**
-- Dedicated `salesschema` for organizing data warehouse objects
-- Primary keys on all dimension tables (nonclustered, not enforced)
-- Foreign key constraints enforcing referential integrity
-- Star schema design for optimized analytical queries
 
-**ETL Automation**
-- `LoadDataFromStaging` stored procedure with parametric year filtering
-- Automatic deduplication using NOT EXISTS logic
-- Type casting for data consistency
-- Incremental data loading capability
 
-**Data Loading Results (2021 Dataset)**
-- Loaded 10,492 unique customers into DimCustomer
-- Loaded 117 unique products into DimItem
-- Loaded 28,784 transactions into FactSales
-
-## Featured SQL Implementations
+## Featured SQL Examples
 
 ### Stored Procedure: Automated Data Loading
 
@@ -129,13 +157,6 @@ GROUP BY c.CustomerName
 ORDER BY TotalSales DESC
 ```
 
-**Results:**
-- Jordan Turner: $14,686.70
-- Nicole Blue: $11,494.93
-- Maurice Shan: $10,525.60
-- Janet Munoz: $10,070.11
-- Alexandra Hall: $9,710.76
-
 ### Top Products by Revenue
 
 ```sql
@@ -147,13 +168,6 @@ LEFT JOIN salesschema.FactSales s ON i.ItemID = s.ItemID
 GROUP BY i.ItemName
 ORDER BY TotalSales DESC
 ```
-
-**Results:**
-- Mountain-200 Black, 46: $718,987.58
-- Mountain-200 Silver, 46: $687,794.17
-- Mountain-200 Black, 38: $668,006.02
-- Mountain-200 Black, 42: $647,760.93
-- Mountain-200 Silver, 38: $641,145.80
 
 ### Advanced Analytics: Top Customer per Category (Window Functions)
 
@@ -188,58 +202,3 @@ FROM RankedSales
 WHERE SalesRank = 1
 ORDER BY TotalSales DESC
 ```
-
-**Results:**
-- Bike: Carson Butler - $318.00
-- Helmet: Hailey Patterson - $209.94
-- Gloves: Joan Coleman - $97.96
-
-## Repository Structure
-
-```
-├── data/
-│   └── sales.csv
-├── MSFabric_Sales_DWH_Implementation.ipynb
-└── README.md
-```
-
-## Key Accomplishments
-
-✓ Designed and implemented complete star schema dimensional model  
-✓ Built automated ETL pipeline with stored procedures  
-✓ Loaded 28,784+ transactions from staging to fact table  
-✓ Implemented referential integrity with foreign key constraints  
-✓ Executed advanced analytics with window functions (ROW_NUMBER)  
-✓ Demonstrated multi-dimensional business reporting  
-✓ Achieved clean data separation (Lakehouse → Warehouse)  
-
-## Skills Demonstrated
-
-**Data Warehouse Design:**
-- Star schema dimensional modeling
-- Fact and dimension table architecture
-- Primary/foreign key relationships
-- Schema organization best practices
-
-**ETL & Data Integration:**
-- Stored procedure development
-- Parametric data loading
-- Deduplication logic (NOT EXISTS)
-- Type casting and data consistency
-
-**SQL Analytics:**
-- Complex CASE statements for categorization
-- Window functions (ROW_NUMBER, PARTITION BY)
-- Common Table Expressions (CTEs)
-- Multi-table joins and aggregations
-- Data grouping and ordering
-
-**Microsoft Fabric:**
-- Lakehouse staging layer setup
-- Data Warehouse creation and management
-- Schema and security implementation
-- Integrated analytics environment
-
----
-
-*This project demonstrates enterprise data warehouse architecture and advanced SQL analytics capabilities in a modern cloud data platform.*
